@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package chatpb;
+
+service Chater {
+    rpc Login(LoginRequest) returns (LoginReply) {};
+    rpc Surf(stream SurfRequest) returns (stream SurfReply) {}; // 网上冲浪
+    rpc Ping(PingRequest) returns (PingReply) {};
+}
+
+message LoginRequest {
+    string username = 1;
+}
+
+message LoginReply {
+    string message = 1;
+    bool success = 2;
+    string token = 3;
+}
+
+message SurfRequest {
+    string message = 1;
+}
+
+message SurfReply{
+    string message = 1;
+    MessageType messageType = 2;
+    enum MessageType {
+        CONNECT_SUCCESS = 0;
+        CHAT_CONTENT = 1;
+    }
+}
+
+message PingRequest {
+    int64 TS = 1;
+}
+
+message PingReply {
+    string message = 1;
+}
+
