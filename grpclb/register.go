@@ -86,9 +86,8 @@ func RegisterService(cli *consulapi.Client, address string, port int, serviceNam
 		ID:      id,
 		Name:    serviceName,
 		Check: &consulapi.AgentServiceCheck{
-			TTL:     "3s",
-			Timeout: "8s",
-			CheckID: id,
+			GRPC:     fmt.Sprintf("%s:%d/%s", address, port, serviceName),
+			Interval: "3s",
 		},
 	}
 	err = cli.Agent().ServiceRegister(registration)
@@ -96,11 +95,4 @@ func RegisterService(cli *consulapi.Client, address string, port int, serviceNam
 		log.Fatalln("consul register service", err)
 	}
 	log.Printf("%s register success\n", registration.ID)
-
-	for range time.Tick(2 * time.Second) {
-		err = cli.Agent().UpdateTTL(id, "", "pass")
-		if err != nil {
-			log.Println("agent upate ttl error:", err)
-		}
-	}
 }

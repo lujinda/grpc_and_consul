@@ -5,13 +5,13 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"log"
-	"net"
-	"sync"
-
 	pb "grpc_and_consul/chatpb"
 	"grpc_and_consul/core"
 	"grpc_and_consul/grpclb"
+	healthpb "grpc_and_consul/healthpb"
+	"log"
+	"net"
+	"sync"
 
 	consulapi "github.com/hashicorp/consul/api"
 	"google.golang.org/grpc"
@@ -64,6 +64,14 @@ func (p *ConnPool) BroadCast(from, message string) {
 		}
 		return true
 	})
+}
+
+type HealthServer struct{}
+
+func (s *HealthServer) Check(ctx context.Context, in *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {
+	return &healthpb.HealthCheckResponse{
+		Status: healthpb.HealthCheckResponse_SERVING,
+	}, nil
 }
 
 type ChatServer struct {
@@ -163,6 +171,13 @@ func (s *ChatServer) Forever() {
 	}
 }
 
+func StartHealthCheck(lis net.Listener) {
+	server := grpc.NewServer()
+	healthpb.RegisterHealthServer(server, &HealthServer{})
+
+	server.Serve(lis)
+}
+
 func main() {
 	flag.IntVar(&Port, "port", 6060, "listen port")
 	flag.StringVar(&Address, "address", "127.0.0.1", "listen address")
@@ -179,10 +194,7 @@ func main() {
 		log.Fatalln("new consul client", err)
 	}
 
-	options := []grpc.ServerOption{
-		grpc.RPCCompressor(grpc.NewGZIPCompressor()),
-		grpc.RPCDecompressor(grpc.NewGZIPDecompressor()),
-	}
+	options := []grpc.ServerOption{}
 
 	server := grpc.NewServer(options...)
 	s := &ChatServer{
@@ -190,8 +202,10 @@ func main() {
 		connPool:       &ConnPool{},
 		remoteChannel:  core.NewRemoteChannel(consulCli, ""),
 	}
+
 	go s.Forever()
 	pb.RegisterChaterServer(server, s)
+	healthpb.RegisterHealthServer(server, &HealthServer{})
 
 	go grpclb.RegisterService(consulCli, Address, Port, ServiceName)
 	fmt.Printf("Listen: %s:%d\n", Address, Port)

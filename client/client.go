@@ -12,9 +12,9 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
-	"utils"
 
 	consulapi "github.com/hashicorp/consul/api"
+	"github.com/lujinda/utils"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -145,8 +145,6 @@ func (robot *Robot) Connect() error {
 
 	options := []grpc.DialOption{
 		grpc.WithInsecure(),
-		grpc.WithDecompressor(grpc.NewGZIPDecompressor()),
-		grpc.WithCompressor(grpc.NewGZIPCompressor()),
 		grpc.WithBalancer(lb),
 		grpc.WithBlock(),
 		grpc.WithTimeout(10 * time.Second),

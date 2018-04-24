@@ -8,6 +8,7 @@ service Chater {
     rpc Ping(PingRequest) returns (PingReply) {};
 }
 
+
 message LoginRequest {
     string username = 1;
 }
@@ -38,4 +39,5 @@ message PingRequest {
 message PingReply {
     string message = 1;
 }
+
 
